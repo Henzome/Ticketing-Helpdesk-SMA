@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Helpdesk Toka SMA</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f7ff;
+      margin: 0;
+    }
+    .navbar {
+      background: #003366;
+      color: white;
+      padding: 15px;
+      font-size: 24px;
+      text-align: center;
+    }
+    .logo-pt {
+      height: 36px !important;
+      width: auto !important;
+    }
+    .menu {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      background: #dceaff;
+      padding: 10px;
+    }
+    .menu button {
+      background: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #003366;
+    }
+    .container {
+      max-width: 650px;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    .password-wrapper {
+      position: relative;
+      margin-top: 10px;
+    }
+    .password-wrapper input[type="password"],
+    .password-wrapper input[type="text"] {
+      width: 100%;
+      padding-right: 90px;
+    }
+    .checkbox-container {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .ticket-box {
+      background: #ffffff;
+      border: 2px dashed #003366;
+      border-radius: 15px;
+      padding: 20px;
+      margin-top: 20px;
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .ticket-box h3 { margin: 0 0 10px; font-size: 20px; color: #003366; }
+    .ticket-box p { margin: 4px 0; font-size: 14px; }
+    .reply, .close-btn, .reply-btn, .download-btn {
+      margin-top: 10px;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="navbar">
+  <img src="logo-pt.png" alt="Logo PT" class="logo-pt">
+  Helpdesk Toka SMA
+</div>
+
+  <div class="menu" id="menu" style="display:none">
+    <button id="btn-form" onclick="show('form')">Buat Tiket</button>
+    <button id="btn-tickets" onclick="show('tickets')">Lihat Tiket</button>
+    <button onclick="logout()">Keluar</button>
+  </div>
+
+  <!-- Login -->
+  <div class="container" id="signin">
+    <h2 style="text-align:center">Masuk</h2>
+    <input type="text" id="login-username" placeholder="Username">
+    <div class="password-wrapper">
+      <input type="password" id="login-password" placeholder="Password">
+      <div class="checkbox-container">
+        <input type="checkbox" id="toggle-password" onclick="togglePassword('login-password')">
+        <label for="toggle-password" style="font-size: 12px;">Tampilkan</label>
+      </div>
+    </div>
+    <select id="login-role">
+      <option value="admin">Admin</option>
+      <option value="user">User</option>
+    </select>
+    <div style="text-align:center; margin-top: 15px;">
+      <button onclick="login()">Login</button>
+    </div>
+    <p style="text-align:center; margin-top: 10px;">Belum punya akun? <a href="#" onclick="show('register')">Buat Akun</a></p>
+  </div>
+
+  <!-- Register -->
+  <div class="container" id="register" style="display:none">
+    <h2 style="text-align:center">Buat Akun</h2>
+    <input type="text" id="reg-username" placeholder="Username">
+    <div class="password-wrapper">
+      <input type="password" id="reg-password" placeholder="Password">
+      <div class="checkbox-container">
+        <input type="checkbox" id="toggle-reg-password" onclick="togglePassword('reg-password')">
+        <label for="toggle-reg-password" style="font-size: 12px;">Tampilkan</label>
+      </div>
+    </div>
+    <select id="reg-role">
+      <option value="user">User</option>
+      <option value="admin">Admin</option>
+    </select>
+    <div style="text-align:center; margin-top: 15px;">
+      <button onclick="register()">Daftar</button>
+    </div>
+    <p style="text-align:center">Sudah punya akun? <a href="#" onclick="show('signin')">Masuk</a></p>
+  </div>
+
+  <!-- Form Tiket -->
+  <div class="container" id="form" style="display:none">
+    <h2 style="text-align:center">Buat Tiket</h2>
+    <label>Username</label>
+    <input type="text" id="form-username" disabled>
+    <label>Client</label>
+    <input type="text" value="ITtoka" disabled>
+    <label>Topik Permasalahan</label>
+    <select id="topic" onchange="toggleCustomTopic(this.value)">
+      <option value="">-- Pilih Topik --</option>
+      <option>Anti Virus Expired</option>
+      <option>Cek CCTV Attendance/Event</option>
+      <option>Change Email Password</option>
+      <option>Create Email</option>
+      <option>Change Password Email</option>
+      <option>Email Error</option>
+      <option>Jaringan Error</option>
+      <option>Create Face Recognition</option>
+      <option>Upgrade RAN</option>
+      <option>Setup Printer</option>
+      <option>Printer Error</option>
+      <option>Setting Scanner</option>
+      <option>Setting Email/Outlook</option>
+      <option>Register Face at ZKTeco</option>
+      <option>New Installation PC</option>
+      <option>New Installation Laptop</option>
+      <option>Perbaikan Wifi</option>
+      <option>Perbaikan LAN</option>
+      <option>PC/Laptop Error</option>
+      <option value="lainnya">Lainnya...</option>
+    </select>
+    <input type="text" id="custom-topic" placeholder="Masukkan topik baru" style="display:none">
+    <label>Ringkasan Masalah</label>
+    <input type="text" id="summary">
+    <button onclick="submitTicket()">Submit</button>
+  </div>
+
+  <!-- Tiket -->
+  <div class="container" id="tickets" style="display:none">
+    <h2 style="text-align:center">Daftar Tiket</h2>
+    <div id="ticket-list"></div>
+  </div>
+
+  <script>
+    let currentUser = '', currentRole = '';
+    let accounts = JSON.parse(localStorage.getItem('accounts') || '{}');
+
+    function show(id) {
+      document.querySelectorAll('.container').forEach(el => el.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      input.type = input.type === "password" ? "text" : "password";
+    }
+
+    function login() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      const role = document.getElementById('login-role').value;
+      if (!accounts[username] || accounts[username].password !== password || accounts[username].role !== role) {
+        return alert("Username, password, atau role salah.");
+      }
+      currentUser = username;
+      currentRole = role;
+      document.getElementById('form-username').value = username;
+      document.getElementById('menu').style.display = 'flex';
+      document.getElementById('btn-form').style.display = (role === 'admin') ? 'inline-block' : 'none';
+      show('tickets');
+      loadTickets();
+    }
+
+    function logout() {
+      currentUser = '';
+      currentRole = '';
+      document.getElementById('menu').style.display = 'none';
+      show('signin');
+    }
+
+    function register() {
+      const username = document.getElementById('reg-username').value;
+      const password = document.getElementById('reg-password').value;
+      const role = document.getElementById('reg-role').value;
+      if (!username || !password) return alert("Isi semua data.");
+      accounts[username] = { password, role };
+      localStorage.setItem('accounts', JSON.stringify(accounts));
+      alert("Akun berhasil dibuat.");
+      show('signin');
+    }
+
+    function toggleCustomTopic(val) {
+      document.getElementById('custom-topic').style.display = (val === 'lainnya') ? 'block' : 'none';
+    }
+
+    function submitTicket() {
+      const topic = document.getElementById('topic').value;
+      const customTopic = document.getElementById('custom-topic').value;
+      const topikFinal = (topic === 'lainnya') ? customTopic : topic;
+      const summary = document.getElementById('summary').value;
+      if (!topikFinal || !summary) return alert("Lengkapi topik dan ringkasan.");
+
+      const tickets = JSON.parse(localStorage.getItem('tiket') || '[]');
+      tickets.push({ user: currentUser, topik: topikFinal, summary, reply: '', status: 'open' });
+      localStorage.setItem('tiket', JSON.stringify(tickets));
+      alert("Tiket berhasil dikirim.");
+      show('tickets');
+      loadTickets();
+    }
+
+    function loadTickets() {
+      const tickets = JSON.parse(localStorage.getItem('tiket') || '[]');
+      const list = document.getElementById('ticket-list');
+      list.innerHTML = '';
+
+      tickets.forEach((t, i) => {
+        const box = document.createElement('div');
+        box.className = 'ticket-box';
+        box.innerHTML = `
+          <h3>Client: ${t.user}</h3>
+          <p>Topik: ${t.topik}</p>
+          <p>Ringkasan: ${t.summary}</p>
+          <p>Status: ${t.status}</p>
+          <p>Balasan User: ${t.reply || '- belum ada -'}</p>
+        `;
+
+        const downloadBtn = document.createElement('button');
+        downloadBtn.className = 'download-btn';
+        downloadBtn.innerText = 'Download PDF';
+        downloadBtn.onclick = () => downloadPDF(t);
+        box.appendChild(downloadBtn);
+
+        if (currentRole === 'user' && t.status === 'open') {
+          const replyInput = document.createElement('textarea');
+          replyInput.className = 'reply';
+          replyInput.placeholder = 'Balas ke admin';
+          const replyBtn = document.createElement('button');
+          replyBtn.className = 'reply-btn';
+          replyBtn.innerText = 'Balas';
+          replyBtn.onclick = () => {
+            t.reply = replyInput.value;
+            localStorage.setItem('tiket', JSON.stringify(tickets));
+            loadTickets();
+          };
+          const closeBtn = document.createElement('button');
+          closeBtn.className = 'close-btn';
+          closeBtn.innerText = 'Close';
+          closeBtn.onclick = () => {
+            tickets.splice(i, 1);
+            localStorage.setItem('tiket', JSON.stringify(tickets));
+            loadTickets();
+          };
+          box.appendChild(replyInput);
+          box.appendChild(replyBtn);
+          box.appendChild(closeBtn);
+        }
+
+        list.appendChild(box);
+      });
+    }
+
+    function downloadPDF(t) {
+     const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'A6' // mirip boarding pass
+  });
+
+  // Header Biru
+  doc.setFillColor(0, 51, 102);
+  doc.rect(0, 0, 148, 20, 'F');
+
+  // Judul putih, ukuran lebih kecil agar tidak terpotong
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(11); // <- Dikecilkan dari 14 ke 11
+  doc.setFont('helvetica', 'bold');
+  doc.text('🎫 Helpdesk Ticket - PT. Samudera Mulia Abadi', 6, 13); // x:6 biar gak mepet kiri
+
+  // Isi Tiket
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+
+  const tanggal = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  let y = 30;
+  doc.text(`Client       : ${t.user}`, 10, y); y += 7;
+  doc.text(`Topik        : ${t.topik}`, 10, y); y += 7;
+  doc.text(`Masalah      : ${t.summary}`, 10, y); y += 7;
+  doc.text(`Balasan User : ${t.reply || '- belum ada -'}`, 10, y); y += 7;
+  doc.text(`Tanggal Buat : ${tanggal}`, 10, y);
+
+  // Garis bawah (opsional)
+  doc.setDrawColor(150);
+  doc.line(10, y + 4, 138, y + 4);
+
+  doc.save(`tiket-${t.user}.pdf`);
+}
+  </script>
+</body>
+</html>
